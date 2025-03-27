@@ -57,7 +57,9 @@ func main() {
 	// Routes
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("OK"))
+		if _, err := w.Write([]byte("OK")); err != nil {
+			log.Printf("Error writing response: %v", err)
+		}
 	})
 
 	// Initialize task handler and API routes
@@ -65,8 +67,9 @@ func main() {
 	routes.SetupRoutes(r, taskHandler)
 
 	server := &http.Server{
-		Addr:    fmt.Sprintf(":%s", port),
-		Handler: r,
+		Addr:              fmt.Sprintf(":%s", port),
+		Handler:           r,
+		ReadHeaderTimeout: 5 * time.Second,
 	}
 
 	// Server run context
@@ -79,7 +82,8 @@ func main() {
 		<-sig
 
 		// Shutdown signal with grace period of 30 seconds
-		shutdownCtx, _ := context.WithTimeout(serverCtx, 30*time.Second)
+		shutdownCtx, cancel := context.WithTimeout(serverCtx, 30*time.Second)
+		defer cancel() // Ensure the cancel function is called to prevent context leak
 
 		go func() {
 			<-shutdownCtx.Done()

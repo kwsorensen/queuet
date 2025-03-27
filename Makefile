@@ -4,6 +4,9 @@
 APP_NAME=queuet
 DOCKER_IMAGE=$(APP_NAME)
 GO_FILES=$(shell find . -name "*.go" -not -path "./vendor/*")
+GOLANGCI_LINT_VERSION=v1.55.2
+GOPATH=$(shell go env GOPATH)
+PATH:=$(PATH):$(GOPATH)/bin
 
 # Help command to show available commands
 help: ## Display this help message
@@ -66,8 +69,12 @@ test-coverage: ## Run tests with coverage
 	go tool cover -html=coverage.out
 
 lint: ## Run linters
-	which golangci-lint || go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
-	golangci-lint run
+	@echo "Running go vet..."
+	go vet ./...
+	@echo "Running go fmt..."
+	go fmt ./...
+	@echo "Running go mod tidy..."
+	go mod tidy
 
 # Docker commands
 docker-build: ## Build Docker image

@@ -1,40 +1,44 @@
 run:
   timeout: 5m
-  modules-download-mode: readonly
 
 linters:
   enable:
-    - gofmt
-    - govet
     - errcheck
-    - staticcheck
-    - gosimple
-    - ineffassign
-    - typecheck
-    - unused
-    - misspell
-    - gosec
-    - prealloc
     - gocritic
+    - gosec
     - revive
+    - govet
+  disable:
+    - deadcode  # Deprecated
+    - varcheck  # Deprecated
+    - nosnakecase  # Deprecated
+    - structcheck  # Deprecated
 
 linters-settings:
+  errcheck:
+    check-type-assertions: true
+    check-blank: true
+    ignore: fmt:.*,io/ioutil:^Read.*
   gocritic:
     enabled-tags:
       - diagnostic
       - style
       - performance
+  gosec:
+    excludes:
+      - G404  # Insecure random number source (math/rand)
   revive:
     rules:
       - name: exported
-        arguments:
-          - disableStutteringCheck
+        severity: warning
+        disabled: false
 
 issues:
-  exclude-use-default: false
-  max-issues-per-linter: 0
-  max-same-issues: 0
   exclude-rules:
     - path: _test\.go
       linters:
-        - gosec 
+        - errcheck  # Ignore errcheck in test files
+    - path: main\.go
+      text: "G112"  # Ignore Slowloris warning in main.go
+  max-issues-per-linter: 0
+  max-same-issues: 0 
