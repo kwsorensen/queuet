@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=${TEST_DB_PORT:-5432}
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=queuet
+      - REDIS_HOST=redis
+      - REDIS_PORT=${TEST_REDIS_PORT:-6379}
+    depends_on:
+      - postgres
+      - redis
+
+  migrations:
+    build:
+      context: .
+      dockerfile: Dockerfile.migrations
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=${TEST_DB_PORT:-5432}
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=queuet
+      - DB_SSLMODE=disable
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres:15-alpine
+    ports:
+      - "${TEST_DB_PORT:-5432}:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=queuet
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "${TEST_REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+
+volumes:
+  postgres_data:
+  redis_data: 

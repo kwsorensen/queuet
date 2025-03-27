@@ -1,0 +1,355 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>cache: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">github.com/queuet/internal/cache/redis.go (90.0%)</option>
+				
+				<option value="file1">github.com/queuet/internal/database/postgres.go (83.3%)</option>
+				
+				<option value="file2">github.com/queuet/internal/handlers/task_handler.go (100.0%)</option>
+				
+				<option value="file3">github.com/queuet/internal/routes/routes.go (100.0%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">not covered</span>
+				<span class="cov8">covered</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">package cache
+
+import (
+        "context"
+        "fmt"
+        "os"
+        "strconv"
+
+        "github.com/redis/go-redis/v9"
+)
+
+type RedisConfig struct {
+        Host     string
+        Port     int
+        Password string
+}
+
+// NewRedisConfig creates a new Redis configuration from environment variables
+func NewRedisConfig() *RedisConfig <span class="cov8" title="1">{
+        port, _ := strconv.Atoi(getEnv("REDIS_PORT", "6379"))
+        return &amp;RedisConfig{
+                Host:     getEnv("REDIS_HOST", "localhost"),
+                Port:     port,
+                Password: getEnv("REDIS_PASSWORD", ""),
+        }
+}</span>
+
+// NewRedisClient creates a new Redis client
+func NewRedisClient(config *RedisConfig) (*redis.Client, error) <span class="cov8" title="1">{
+        client := redis.NewClient(&amp;redis.Options{
+                Addr:     fmt.Sprintf("%s:%d", config.Host, config.Port),
+                Password: config.Password,
+                DB:       0,
+        })
+
+        // Test the connection
+        if err := client.Ping(context.Background()).Err(); err != nil </span><span class="cov8" title="1">{
+                return nil, fmt.Errorf("error connecting to Redis: %v", err)
+        }</span>
+
+        <span class="cov0" title="0">return client, nil</span>
+}
+
+// getEnv retrieves an environment variable with a fallback value
+func getEnv(key, fallback string) string <span class="cov8" title="1">{
+        val, exists := os.LookupEnv(key)
+        if !exists || val == "" </span><span class="cov8" title="1">{
+                return fallback
+        }</span>
+        <span class="cov8" title="1">return val</span>
+}
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">package database
+
+import (
+        "database/sql"
+        "fmt"
+        "os"
+
+        _ "github.com/lib/pq"
+)
+
+type Config struct {
+        Host     string
+        Port     string
+        User     string
+        Password string
+        DBName   string
+        SSLMode  string
+}
+
+// NewConfig creates a new database configuration from environment variables
+func NewConfig() *Config <span class="cov8" title="1">{
+        return &amp;Config{
+                Host:     getEnv("DB_HOST", "localhost"),
+                Port:     getEnv("DB_PORT", "5432"),
+                User:     getEnv("DB_USER", "postgres"),
+                Password: getEnv("DB_PASSWORD", "postgres"),
+                DBName:   getEnv("DB_NAME", "queuet"),
+                SSLMode:  getEnv("DB_SSLMODE", "disable"),
+        }
+}</span>
+
+// Connect establishes a connection to the database
+func Connect(config *Config) (*sql.DB, error) <span class="cov8" title="1">{
+        dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
+                config.Host, config.Port, config.User, config.Password, config.DBName, config.SSLMode)
+
+        db, err := sql.Open("postgres", dsn)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("error opening database: %v", err)
+        }</span>
+
+        <span class="cov8" title="1">if err := db.Ping(); err != nil </span><span class="cov8" title="1">{
+                return nil, fmt.Errorf("error connecting to the database: %v", err)
+        }</span>
+
+        <span class="cov0" title="0">return db, nil</span>
+}
+
+// getEnv retrieves an environment variable with a fallback value
+func getEnv(key, fallback string) string <span class="cov8" title="1">{
+        val, exists := os.LookupEnv(key)
+        if !exists || val == "" </span><span class="cov8" title="1">{
+                return fallback
+        }</span>
+        <span class="cov8" title="1">return val</span>
+}
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">package handlers
+
+import (
+        "encoding/json"
+        "net/http"
+        "strconv"
+
+        "github.com/go-chi/chi/v5"
+        "github.com/queuet/internal/models"
+)
+
+type TaskHandler struct {
+        // Add your dependencies here (DB, Redis, etc.)
+}
+
+func NewTaskHandler() *TaskHandler <span class="cov8" title="1">{
+        return &amp;TaskHandler{}
+}</span>
+
+func (h *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        var req models.CreateTaskRequest
+        if err := json.NewDecoder(r.Body).Decode(&amp;req); err != nil </span><span class="cov8" title="1">{
+                http.Error(w, "Invalid request payload", http.StatusBadRequest)
+                return
+        }</span>
+
+        // Validate required fields
+        <span class="cov8" title="1">if req.Title == "" </span><span class="cov8" title="1">{
+                http.Error(w, "Title is required", http.StatusBadRequest)
+                return
+        }</span>
+
+        // TODO: Implement task creation logic with database
+
+        <span class="cov8" title="1">w.WriteHeader(http.StatusCreated)</span>
+}
+
+func (h *TaskHandler) GetTask(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        taskID, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
+        if err != nil </span><span class="cov8" title="1">{
+                http.Error(w, "Invalid task ID", http.StatusBadRequest)
+                return
+        }</span>
+
+        // TODO: Implement get task logic with database and cache
+
+        // For now, return a mock response
+        <span class="cov8" title="1">task := &amp;models.Task{
+                ID:          taskID,
+                Title:       "Sample Task",
+                Description: "This is a sample task",
+                Status:      "pending",
+        }
+
+        w.Header().Set("Content-Type", "application/json")
+        json.NewEncoder(w).Encode(task)</span>
+}
+
+func (h *TaskHandler) UpdateTask(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        taskID, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
+        if err != nil </span><span class="cov8" title="1">{
+                http.Error(w, "Invalid task ID", http.StatusBadRequest)
+                return
+        }</span>
+
+        <span class="cov8" title="1">var req models.UpdateTaskRequest
+        if err := json.NewDecoder(r.Body).Decode(&amp;req); err != nil </span><span class="cov8" title="1">{
+                http.Error(w, "Invalid request payload", http.StatusBadRequest)
+                return
+        }</span>
+
+        // TODO: Implement update task logic with database
+        <span class="cov8" title="1">_ = taskID // Temporary use of taskID until database implementation
+
+        w.WriteHeader(http.StatusOK)</span>
+}
+
+func (h *TaskHandler) DeleteTask(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        taskID, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
+        if err != nil </span><span class="cov8" title="1">{
+                http.Error(w, "Invalid task ID", http.StatusBadRequest)
+                return
+        }</span>
+
+        // TODO: Implement delete task logic with database
+        <span class="cov8" title="1">_ = taskID // Temporary use of taskID until database implementation
+
+        w.WriteHeader(http.StatusNoContent)</span>
+}
+
+func (h *TaskHandler) ListTasks(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        // TODO: Implement list tasks logic with database and pagination
+
+        // For now, return mock data
+        tasks := []models.Task{
+                {
+                        ID:          1,
+                        Title:       "Task 1",
+                        Description: "Description 1",
+                        Status:      "pending",
+                },
+                {
+                        ID:          2,
+                        Title:       "Task 2",
+                        Description: "Description 2",
+                        Status:      "completed",
+                },
+        }
+
+        w.Header().Set("Content-Type", "application/json")
+        json.NewEncoder(w).Encode(tasks)
+}</span>
+</pre>
+		
+		<pre class="file" id="file3" style="display: none">package routes
+
+import (
+        "github.com/go-chi/chi/v5"
+        "github.com/queuet/internal/handlers"
+)
+
+func SetupRoutes(r chi.Router) <span class="cov8" title="1">{
+        taskHandler := handlers.NewTaskHandler()
+
+        r.Route("/api/v1", func(r chi.Router) </span><span class="cov8" title="1">{
+                // Tasks endpoints
+                r.Route("/tasks", func(r chi.Router) </span><span class="cov8" title="1">{
+                        r.Get("/", taskHandler.ListTasks)
+                        r.Post("/", taskHandler.CreateTask)
+                        r.Get("/{id}", taskHandler.GetTask)
+                        r.Put("/{id}", taskHandler.UpdateTask)
+                        r.Delete("/{id}", taskHandler.DeleteTask)
+                }</span>)
+        })
+}
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>
